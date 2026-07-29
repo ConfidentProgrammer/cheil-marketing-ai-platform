@@ -1,6 +1,14 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { X, Sparkles, ShieldCheck, FileText, Globe, Layers, TrendingUp } from "lucide-react";
+import {
+  X,
+  Sparkles,
+  ShieldCheck,
+  FileText,
+  Globe,
+  Layers,
+  TrendingUp,
+} from "lucide-react";
 import type { Asset } from "../types";
 
 interface AssetPreviewModalProps {
@@ -8,7 +16,10 @@ interface AssetPreviewModalProps {
   onClose: () => void;
 }
 
-export const AssetPreviewModal: React.FC<AssetPreviewModalProps> = ({ asset, onClose }) => {
+export const AssetPreviewModal: React.FC<AssetPreviewModalProps> = ({
+  asset,
+  onClose,
+}) => {
   if (!asset) return null;
 
   return (
@@ -26,11 +37,15 @@ export const AssetPreviewModal: React.FC<AssetPreviewModalProps> = ({ asset, onC
               <Sparkles className="h-3.5 w-3.5 text-indigo-400" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-zinc-100">{asset.title}</h3>
-              <p className="text-[11px] text-zinc-400">SKU: {asset.metadata.sku} • Format: {asset.format}</p>
+              <h3 className="text-sm font-semibold text-zinc-100">
+                {asset.title}
+              </h3>
+              <p className="text-[11px] text-zinc-400">
+                SKU: {asset.metadata.sku} • Format: {asset.format}
+              </p>
             </div>
           </div>
-          <button 
+          <button
             onClick={onClose}
             className="text-zinc-400 hover:text-white p-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 transition-colors cursor-pointer"
           >
@@ -42,11 +57,11 @@ export const AssetPreviewModal: React.FC<AssetPreviewModalProps> = ({ asset, onC
         <div className="grid grid-cols-1 md:grid-cols-12 flex-1 overflow-y-auto">
           {/* Left: Larger Image View */}
           <div className="md:col-span-6 bg-black p-6 flex items-center justify-center border-r border-zinc-800">
-            <div className="relative rounded-xl overflow-hidden shadow-2xl max-h-[500px] border border-zinc-800">
-              <img 
-                src={asset.url} 
-                alt={asset.title} 
-                className="object-contain max-h-[480px] w-full"
+            <div className="relative rounded-xl overflow-hidden shadow-2xl max-h-125 border border-zinc-800">
+              <img
+                src={asset.url}
+                alt={asset.title}
+                className="object-contain max-h-120 w-full"
               />
               <div className="absolute bottom-3 left-3 bg-black/80 backdrop-blur-md px-3 py-1 rounded-full text-xs text-emerald-400 border border-emerald-500/30 font-medium">
                 Score: {asset.score}
@@ -84,7 +99,9 @@ export const AssetPreviewModal: React.FC<AssetPreviewModalProps> = ({ asset, onC
                   <ShieldCheck className="h-3 w-3 text-emerald-400" />
                   Pinecone RAG Rule
                 </span>
-                <p className="text-zinc-200 font-medium truncate">{asset.audit.ragRuleMatched}</p>
+                <p className="text-zinc-200 font-medium truncate">
+                  {asset.audit.ragRuleMatched}
+                </p>
               </div>
               <div className="bg-zinc-900/60 p-3 rounded-xl border border-zinc-800 space-y-1">
                 <span className="text-zinc-400 text-[10px] flex items-center gap-1">
@@ -99,14 +116,20 @@ export const AssetPreviewModal: React.FC<AssetPreviewModalProps> = ({ asset, onC
             <div className="bg-indigo-950/30 border border-indigo-500/20 p-3 rounded-xl flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <TrendingUp className="h-4 w-4 text-indigo-400" />
-                <span className="text-indigo-200 font-medium">Predicted Engagement</span>
+                <span className="text-indigo-200 font-medium">
+                  Predicted Engagement
+                </span>
               </div>
-              <span className="text-emerald-400 font-bold">{asset.predictedCTR}</span>
+              <span className="text-emerald-400 font-bold">
+                {asset.predictedCTR}
+              </span>
             </div>
 
             {/* Accessibility & Tags */}
             <div className="space-y-2">
-              <span className="text-zinc-400 font-medium">Generated Alt-Text (CMS Ready):</span>
+              <span className="text-zinc-400 font-medium">
+                Generated Alt-Text (CMS Ready):
+              </span>
               <p className="text-zinc-300 bg-zinc-900/50 p-2.5 rounded-lg border border-zinc-800/80 text-[11px]">
                 {asset.metadata.altText}
               </p>
@@ -116,7 +139,7 @@ export const AssetPreviewModal: React.FC<AssetPreviewModalProps> = ({ asset, onC
 
         {/* Footer */}
         <div className="border-t border-zinc-800 px-6 py-3 bg-zinc-900/50 flex justify-end">
-          <button 
+          <button
             onClick={onClose}
             className="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2 rounded-xl text-xs transition-all cursor-pointer shadow-lg shadow-indigo-600/20"
           >
