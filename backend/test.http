@@ -30,3 +30,19 @@ Content-Type: application/json
   "format": "Web Leaderboard (16:9)",
   "tone": "High-End Enterprise"
 }
+
+### Test Copilot RAG Query Endpoint
+POST http://localhost:8000/api/copilot-query
+Content-Type: application/json
+
+{
+  "query": "What are the logo clear space rules for Samsung branding?"
+}
+
+### Test Copilot Regional Localization Query
+POST http://localhost:8000/api/copilot-query
+Content-Type: application/json
+
+{
+  "query": "What are the Canadian French localization and OQLF guidelines?"
+}

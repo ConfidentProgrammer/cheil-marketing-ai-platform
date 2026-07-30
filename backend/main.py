@@ -1,10 +1,11 @@
 import json
 import os
 import asyncio
-from typing import List
+from typing import List, Optional, Union
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
 from PIL import Image, ImageDraw, ImageFont
+import io
 from pinecone import Pinecone
 from dotenv import load_dotenv
 from google import genai
@@ -141,7 +142,7 @@ async def audit_generated_asset_with_gemini(image_path: str, brand_rules: str, c
 
 class BriefRequest(BaseModel):
     language: str
-    format: str
+    format: Union[str, List[str]]  # Or simply: format: str | List[str]
     tone: str
 
 @app.post("/api/generate-brief")
@@ -317,3 +318,183 @@ async def upload_and_generate_assets(
         "total_processed": len(all_results),
         "results": all_results
     }
+
+class CopilotQueryRequest(BaseModel):
+    query: str
+
+@app.post("/api/copilot-query")
+async def copilot_query(req: CopilotQueryRequest):
+    try:
+        # 1. Query Pinecone Vector DB for relevant brand guidelines
+        brand_rules = retrieve_brand_rules(req.query) # Returns retrieved text chunks from Pinecone
+
+        # 2. Inject brand_rules into the prompt so Gemini is grounded in the retrieved data
+        prompt = (
+            f"You are an expert Samsung RAG Brand Copilot. Answer the user's question about "
+            f"visual identity, logo placement, or campaign rules based strictly on the provided Samsung official guidelines.\n\n"
+            f"Retrieved Brand Guidelines:\n{brand_rules}\n\n"
+            f"User Question: {req.query}\n\n"
+            f"Instructions:\n"
+            f"- Provide a concise response using short bullet points.\n"
+            f"- Reference specific sections if available in the guidelines."
+        )
+
+        response = genai_client.models.generate_content(
+            model='gemini-3.5-flash-lite',
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                temperature=0.1,
+                max_output_tokens=150,
+            ),
+        )
+
+        if response.text:
+            return {"success": True, "reply": response.text.strip()}
+        else:
+            return {"success": True, "reply": "• No specific guideline found matching that query."}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+class HtmlStudioRequest(BaseModel):
+    headline: str
+    selected_tone: str
+    selected_language: str
+    formats: str
+
+
+
+def extract_dominant_color(image_file: UploadFile) -> str:
+    """Extracts a dominant hex color from the uploaded image."""
+    try:
+        image_bytes = image_file.file.read()
+        image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+        # Resize for fast processing
+        image = image.resize((50, 50))
+        colors = image.getcolors(maxcolors=2500)
+        
+        # Sort by frequency and get the most common color (ignoring near black/white if desired)
+        if colors:
+            sorted_colors = sorted(colors, key=lambda x: x[0], reverse=True)
+            # Find a vibrant or dominant color
+            for count, color in sorted_colors:
+                # Filter out pure black/white extremes if you want vivid accents
+                if not (color[0] < 20 and color[1] < 20 and color[2] < 20) and not (color[0] > 240 and color[1] > 240 and color[2] > 240):
+                    return f"#{color[0]:02x}{color[1]:02x}{color[2]:02x}"
+        
+        # Fallback neon blue accent
+        return "#00f2fe"
+    except Exception:
+        return "#00f2fe"
+    finally:
+        image_file.file.seek(0) # Reset file pointer for future use
+
+
+@app.post("/api/v1/html-studio/generate-suite")
+async def generate_html_suite(
+    headline: str = Form(...),
+    selected_tone: str = Form(...),
+    selected_language: str = Form(...),
+    formats: str = Form(...),
+    image_file: Optional[UploadFile] = File(None)
+):
+    """
+    Retrieves brand guardrails via RAG, processes uploaded image asset path, 
+    and prompts Gemini to synthesize responsive multi-format HTML ad suites.
+    """
+    accent_hex = "#00f2fe" # Default fallback
+    if image_file:
+        accent_hex = extract_dominant_color(image_file)
+
+    try:
+        # 1. Save uploaded image asset to UPLOADS_DIR if provided
+        image_url = "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?auto=format&fit=crop&w=600&q=80"
+        if image_file:
+            file_path = os.path.join(UPLOADS_DIR, image_file.filename)
+            with open(file_path, "wb") as buffer:
+                content = await image_file.read()
+                buffer.write(content)
+            # Map to your static uploads route or relative serving path
+            image_url = f"/outputs/{image_file.filename}" # Or copy logic to expose uploads if needed
+
+        # 2. Retrieve brand compliance rules using your existing RAG pipeline
+        rag_query = f"Campaign headline: {headline}, Tone: {selected_tone}, Language: {selected_language}"
+        brand_rules = retrieve_brand_rules(rag_query)
+
+        format_list = [f.strip() for f in formats.split(",") if f.strip()]
+        results = []
+
+        for fmt in format_list:
+            # Extract dimensions from format string (e.g., "Web Leaderboard (728x90)")
+            dim_part = fmt.split("(")[-1].replace(")", "")
+            width, height = dim_part.split("x") if "x" in dim_part else ("300", "250")
+
+            # 3. Prompt Gemini to generate clean HTML/CSS code grounded in RAG rules
+            prompt = f"""
+            You are an elite Samsung frontend developer specializing in responsive digital ad banners.
+            Create a single self-contained, responsive HTML file with embedded CSS for a display ad banner.
+            Dimensions: Width {width}px, Height {height}px.
+            Headline: "{headline}"
+            Tone: {selected_tone}
+            Language: {selected_language}
+            Primary Brand Accent Hex: "{accent_hex}"
+            Brand Guardrails & Rules: {brand_rules}
+            
+            DESIGN INSTRUCTIONS:
+            - Do NOT include any <img> tags or external image references to prevent broken image errors.
+            - Build a pure typographic and abstract CSS layout using "{accent_hex}" as the core dynamic accent color (e.g., for glowing borders, call-to-action buttons, or ambient background gradients) paired with sleek dark tech backgrounds (#0b0b0b).
+            
+            Return ONLY valid raw HTML code starting with <!DOCTYPE html>. Do not wrap it in markdown code blocks or backticks.
+            """
+
+            try:
+                response = genai_client.models.generate_content(
+                    model="gemini-3.5-flash-lite",
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        temperature=0.3,
+                        max_output_tokens=3000,
+                    ),
+                )
+                html_output = response.text.strip() if response.text else ""
+                
+                # Strip accidental markdown wrappers if present
+                if html_output.startswith("```html"):
+                    html_output = html_output[7:]
+                if html_output.startswith("```"):
+                    html_output = html_output[3:]
+                if html_output.endswith("```"):
+                    html_output = html_output[:-3]
+                    
+            except Exception as gemini_err:
+                print(f"Gemini HTML generation fallback triggered: {str(gemini_err)}")
+                html_output = f"""<!DOCTYPE html>
+                <html>
+                <head>
+                <style>
+                  body {{ margin: 0; background: #09090b; color: #fff; font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; padding: 12px; height: 100vh; box-sizing: border-box; text-align: center; border: 1px solid #27272a; }}
+                  h3 {{ font-size: 13px; margin: 0 0 4px 0; }}
+                  p {{ font-size: 10px; color: #a1a1aa; margin: 0; }}
+                </style>
+                </head>
+                <body>
+                  <div>
+                    <h3>{headline}</h3>
+                    <p>{selected_tone} | {selected_language}</p>
+                  </div>
+                </body>
+                </html>"""
+
+            results.append({
+                "format": fmt,
+                "html": html_output.strip()
+            })
+
+        return {
+            "success": True,
+            "rag_rules_matched": brand_rules,
+            "results": results
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

@@ -24,4 +24,4 @@ export interface Asset {
   masterProductName?: string;
 }
 
-export type ActiveTab = "generator" | "copilot";
+export type ActiveTab = "generator" | "copilot" | "html-studio";

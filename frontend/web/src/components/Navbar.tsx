@@ -1,5 +1,5 @@
 import React from "react";
-import { Sparkles, MessageSquare } from "lucide-react";
+import { Sparkles, MessageSquare, LayoutTemplate } from "lucide-react";
 import type { ActiveTab } from "../types";
 
 interface NavbarProps {
@@ -28,13 +28,34 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
         <div className="flex bg-zinc-900 border border-zinc-800 rounded-lg p-1 text-xs">
           <button
             onClick={() => setActiveTab("generator")}
-            className={`px-3 py-1 rounded-md transition-all cursor-pointer ${activeTab === "generator" ? "bg-[#1428a0] text-white font-medium shadow-md" : "text-zinc-400 hover:text-white"}`}
+            className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
+              activeTab === "generator"
+                ? "bg-[#1428a0] text-white font-medium shadow-md"
+                : "text-zinc-400 hover:text-white"
+            }`}
           >
             Studio Generator
           </button>
+          
+          <button
+            onClick={() => setActiveTab("html-studio")}
+            className={`px-3 py-1 rounded-md transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeTab === "html-studio"
+                ? "bg-[#1428a0] text-white font-medium shadow-md"
+                : "text-zinc-400 hover:text-white"
+            }`}
+          >
+            <LayoutTemplate className="h-3 w-3" />
+            <span>HTML Ad Studio</span>
+          </button>
+
           <button
             onClick={() => setActiveTab("copilot")}
-            className={`px-3 py-1 rounded-md transition-all flex items-center gap-1.5 cursor-pointer ${activeTab === "copilot" ? "bg-[#1428a0] text-white font-medium shadow-md" : "text-zinc-400 hover:text-white"}`}
+            className={`px-3 py-1 rounded-md transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeTab === "copilot"
+                ? "bg-[#1428a0] text-white font-medium shadow-md"
+                : "text-zinc-400 hover:text-white"
+            }`}
           >
             <MessageSquare className="h-3 w-3" />
             <span>Chat-with-Brief</span>

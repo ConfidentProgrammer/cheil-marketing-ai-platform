@@ -7,6 +7,7 @@ import { AssetGallery } from "./components/AssetGallery";
 import { MetadataModal } from "./components/MetadataModal";
 import type { Asset, ActiveTab } from "./types";
 import { AssetPreviewModal } from "./components/AssetPreviewModal";
+import { HtmlBannerStudio } from "./components/HtmlBannerStudio";
 
 export default function App(): JSX.Element {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
@@ -180,36 +181,45 @@ const liveBatchAssets: Asset[] = data.results.map((item: any, index: number) => 
 
       <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
 
-      <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 p-6 max-w-[1600px] mx-auto w-full relative z-10">
-        <section className="lg:col-span-4 flex flex-col bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-5 backdrop-blur-xl shadow-2xl">
-          {activeTab === "generator" ? (
-            <ControlPanel
-              briefText={briefText}
-              setBriefText={setBriefText}
-              selectedLanguage={selectedLanguage}
-              setSelectedLanguage={setSelectedLanguage}
-              selectedFormat={selectedFormat}
-              setSelectedFormat={setSelectedFormat}
-              selectedTone={selectedTone}
-              setSelectedTone={setSelectedTone}
-              isGenerating={isGenerating}
-              onGenerate={handleGenerate}
-              uploadedFiles={uploadedFiles}
-              setUploadedFiles={setUploadedFiles}
-            />
-          ) : (
-            <CopilotSidebar />
-          )}
-        </section>
-
-        <section className="lg:col-span-8 flex flex-col space-y-4">
-          <AssetGallery
-            assets={assets}
-            onInspectAsset={setInspectingAsset}
-            onPreviewAsset={handlePreviewAsset}
+     <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 p-6 max-w-[1600px] mx-auto w-full relative z-10">
+  {activeTab === "html-studio" ? (
+    // Full width layout for HTML Studio
+    <section className="lg:col-span-12 flex flex-col">
+      <HtmlBannerStudio />
+    </section>
+  ) : (
+    <>
+      <section className="lg:col-span-4 flex flex-col bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-5 backdrop-blur-xl shadow-2xl">
+        {activeTab === "generator" ? (
+          <ControlPanel
+            briefText={briefText}
+            setBriefText={setBriefText}
+            selectedLanguage={selectedLanguage}
+            setSelectedLanguage={setSelectedLanguage}
+            selectedFormat={selectedFormat}
+            setSelectedFormat={setSelectedFormat}
+            selectedTone={selectedTone}
+            setSelectedTone={setSelectedTone}
+            isGenerating={isGenerating}
+            onGenerate={handleGenerate}
+            uploadedFiles={uploadedFiles}
+            setUploadedFiles={setUploadedFiles}
           />
-        </section>
-      </main>
+        ) : (
+          <CopilotSidebar />
+        )}
+      </section>
+
+      <section className="lg:col-span-8 flex flex-col space-y-4">
+        <AssetGallery
+          assets={assets}
+          onInspectAsset={setInspectingAsset}
+          onPreviewAsset={handlePreviewAsset}
+        />
+      </section>
+    </>
+  )}
+</main>
 
       <AnimatePresence>
         {inspectingAsset && (
