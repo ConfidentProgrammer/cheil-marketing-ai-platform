@@ -36,7 +36,7 @@ export default function App(): JSX.Element {
       title: "Lifestyle Beach Hero (CA-EN)",
       format: "Instagram Story",
       score: "98% Match",
-      url: "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?auto=format&fit=crop&w=600&q=80",
+      url: "https://images.unsplash.com/photo-1707438095940-1eee18e85400?q=80&w=2231&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
       language: "en-CA",
       predictedCTR: "+4.2% vs Benchmark",
       metadata: {
@@ -57,7 +57,7 @@ export default function App(): JSX.Element {
       title: "Product Folded Close-up (FR-CA)",
       format: "Facebook Feed",
       score: "95% Match",
-      url: "https://images.unsplash.com/photo-1580910051074-3eb694886505?auto=format&fit=crop&w=600&q=80",
+      url: "https://images.unsplash.com/photo-1691449808001-bb8c157f0094?q=80&w=1015&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
       language: "fr-CA",
       predictedCTR: "+3.8% vs Benchmark",
       metadata: {
@@ -78,7 +78,7 @@ export default function App(): JSX.Element {
       title: "Minimalist Urban Banner",
       format: "Web Leaderboard",
       score: "99% Match",
-      url: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&w=600&q=80",
+      url: "https://images.unsplash.com/photo-1722153105551-cfea928e80de?q=80&w=2232&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
       language: "en-US",
       predictedCTR: "+5.1% vs Benchmark",
       metadata: {
