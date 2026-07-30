@@ -43,7 +43,7 @@ export const CopilotSidebar: React.FC = () => {
     <div className="flex flex-col h-[520px] justify-between">
       <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
         <h3 className="text-sm font-medium text-zinc-200 flex items-center gap-2">
-          <MessageSquare className="h-4 w-4 text-indigo-400" />
+          <MessageSquare className="h-4 w-4 text-blue-400" />
           Chat-with-the-Brief Copilot
         </h3>
         <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded">
@@ -58,7 +58,7 @@ export const CopilotSidebar: React.FC = () => {
             className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"}`}
           >
             <div
-              className={`p-3 rounded-xl max-w-[85%] ${msg.role === "user" ? "bg-indigo-600 text-white" : "bg-zinc-950 border border-zinc-800 text-zinc-300"}`}
+              className={`p-3 rounded-xl max-w-[85%] ${msg.role === "user" ? "bg-[#1428a0] text-white" : "bg-zinc-950 border border-zinc-800 text-zinc-300"}`}
             >
               {msg.text}
             </div>
@@ -75,11 +75,11 @@ export const CopilotSidebar: React.FC = () => {
           value={copilotQuery}
           onChange={(e) => setCopilotQuery(e.target.value)}
           placeholder="Ask about logo whitespace, fonts, rules..."
-          className="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-zinc-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          className="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-zinc-200 focus:outline-none focus:ring-1 focus:ring-[#1428a0]"
         />
         <button
           type="submit"
-          className="bg-indigo-600 hover:bg-indigo-500 text-white p-2.5 rounded-xl transition-all cursor-pointer"
+          className="bg-[#1428a0] hover:bg-[#0057b8] text-white p-2.5 rounded-xl transition-all cursor-pointer shadow-lg shadow-[#1428a0]/20"
         >
           <Send className="h-3.5 w-3.5" />
         </button>

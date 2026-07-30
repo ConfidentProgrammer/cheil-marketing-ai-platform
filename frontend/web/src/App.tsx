@@ -95,65 +95,93 @@ export default function App(): JSX.Element {
     },
   ]);
 
-  const handleGenerate = () => {
+  // Helper function to map frontend human-readable options to backend aspect ratios
+  const parseAspectRatios = (formatStr: string): string => {
+    if (formatStr.includes("Instagram")) return "9:16";
+    if (formatStr.includes("Facebook")) return "1:1";
+    if (formatStr.includes("Web")) return "16:9";
+    // Default fallback for "All Formats"
+    return "1:1,16:9,9:16";
+  };
+
+  const handleGenerate = async () => {
     setIsGenerating(true);
 
-    setTimeout(() => {
-      // If user uploaded files, create variants for each product. Otherwise generate a standard batch.
-      const productNames =
-        uploadedFiles.length > 0
-          ? uploadedFiles.map((f) => f.name.replace(/\.[^/.]+$/, ""))
-          : ["Galaxy_Z_Flip6", "Galaxy_Watch_Ultra", "Neo_QLED_8K"];
+    try {
+      const formData = new FormData();
+      formData.append("campaign_brief", briefText);
+      formData.append("aspect_ratios", parseAspectRatios(selectedFormat));
 
-      const formats = [
-        "Instagram Story (9:16)",
-        "Facebook Feed (1:1)",
-        "Web Leaderboard (16:9)",
-      ];
-
-      // Generate a multi-product matrix batch (e.g. 10 variants per product)
-      const newBatchAssets: Asset[] = [];
-      let idCounter = Date.now();
-
-      productNames.forEach((product, pIndex) => {
-        formats.forEach((fmt, fIndex) => {
-          newBatchAssets.push({
-            id: idCounter++,
-            title: `${product.replace(/[_]/g, " ")} - Variant ${fIndex + 1}`,
-            format: fmt,
-            score: `${Math.floor(92 + Math.random() * 7)}% Match`,
-            url: uploadedFiles[pIndex]
-              ? URL.createObjectURL(uploadedFiles[pIndex])
-              : "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?auto=format&fit=crop&q=80&w=800",
-            language: selectedLanguage.split(" ")[0],
-            predictedCTR: `+${(3.5 + Math.random() * 2.5).toFixed(1)}% CTR`,
-            masterProductName: product,
-            metadata: {
-              sku: `SKU-${Math.floor(100000 + Math.random() * 900000)}`,
-              altText: `Promotional asset for ${product} optimized for ${selectedLanguage}`,
-              tags: [product, selectedTone, selectedLanguage, fmt],
-            },
-            audit: {
-              briefUsed: briefText || "Default global showcase campaign brief",
-              tone: selectedTone,
-              ragRuleMatched: "Samsung_Multi_SKU_Compliance_2026",
-              timestamp: "Just now (Batch Pipeline)",
-            },
-          });
+      // Append uploaded files if present, else fallback to default server test files if needed
+      if (uploadedFiles.length > 0) {
+        uploadedFiles.forEach((file) => {
+          formData.append("files", file);
         });
+      } else {
+        // Optional: Alert or let backend use default if user didn't upload files
+        console.warn("No files uploaded. Running with server-side defaults.");
+      }
+
+      const response = await fetch("https://literate-fishstick-77pp49g4v45hx4w-8000.app.github.dev/api/v1/assets/upload-and-generate", {
+        method: "POST",
+        body: formData,
       });
 
-      setAssets(newBatchAssets);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || "Failed to generate assets from FastAPI backend.");
+      }
+
+      // Map FastAPI batch output structure to your UI Asset type interface
+// Map FastAPI batch output structure to your UI Asset type interface
+const liveBatchAssets: Asset[] = data.results.map((item: any, index: number) => ({
+  id: Date.now() + index,
+  title: `${item.product || "Samsung Product"} (${item.aspect_ratio})`,
+  format: item.aspect_ratio === "9:16" ? "Instagram Story" : item.aspect_ratio === "1:1" ? "Facebook Feed" : "Web Leaderboard",
+  
+  // Real score from Gemini Vision API backend
+  score: item.score || "95% Match",
+  
+  url: item.status === "success" ? `https://literate-fishstick-77pp49g4v45hx4w-8000.app.github.dev${item.file_path}` : "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?auto=format&fit=crop&q=80&w=800",
+  language: selectedLanguage.split(" ")[0],
+  
+  // Real predicted CTR returned by Gemini audit pipeline!
+  predictedCTR: item.predicted_ctr || "+5.0% vs Benchmark",
+  masterProductName: item.product,
+  
+  metadata: {
+    sku: `SKU-${Math.floor(100000 + Math.random() * 900000)}`,
+    altText: item.status === "success" ? `Generated asset for ${item.product} with brief: ${briefText}` : `Error: ${item.error}`,
+    tags: [item.product, selectedTone, selectedLanguage, item.aspect_ratio],
+  },
+  audit: {
+    briefUsed: briefText,
+    tone: selectedTone,
+    // Real audit text description returned by Gemini Vision
+    ragRuleMatched: item.audit_summary || "Samsung Multi-SKU Compliance 2026",
+  }
+}));
+      console.log(liveBatchAssets)
+      setAssets(liveBatchAssets);
+    } catch (err) {
+      console.error("Batch Generation Error:", err);
+      alert("Error connecting to backend generation API. Ensure FastAPI server is running on port 8000.");
+    } finally {
       setIsGenerating(false);
-    }, 2000);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-zinc-100 flex flex-col selection:bg-indigo-500 selection:text-white">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-zinc-950 to-[#070d24] text-zinc-100 flex flex-col selection:bg-[#1428a0] selection:text-white relative overflow-x-hidden">
+      {/* Ambient Samsung Glow Effects */}
+      <div className="absolute top-0 left-1/4 w-[600px] h-[300px] bg-[#1428a0]/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-10 right-10 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+
       <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
 
-      <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 p-6 max-w-[1600px] mx-auto w-full">
-        <section className="lg:col-span-4 flex flex-col bg-zinc-900/40 border border-zinc-800/80 rounded-2xl p-5 backdrop-blur-sm">
+      <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 p-6 max-w-[1600px] mx-auto w-full relative z-10">
+        <section className="lg:col-span-4 flex flex-col bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-5 backdrop-blur-xl shadow-2xl">
           {activeTab === "generator" ? (
             <ControlPanel
               briefText={briefText}

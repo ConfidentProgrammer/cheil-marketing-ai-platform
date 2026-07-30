@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Upload, Layers, Globe, ShieldCheck, FileText, RefreshCw, Sparkles, X, Plus } from "lucide-react";
 
@@ -32,6 +32,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   setUploadedFiles,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isGeneratingBrief, setIsGeneratingBrief] = useState(false);
 
   const handleDropzoneClick = () => {
     fileInputRef.current?.click();
@@ -49,20 +50,48 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
     setUploadedFiles((prev) => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
+  // API Call to FastAPI backend which triggers Gemini
+  const handleAISuggestion = async () => {
+    setIsGeneratingBrief(true);
+    try {
+      const response = await fetch("https://literate-fishstick-77pp49g4v45hx4w-8000.app.github.dev/api/generate-brief", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          language: selectedLanguage,
+          format: selectedFormat,
+          tone: selectedTone,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success && data.brief) {
+        setBriefText(data.brief);
+      }
+    } catch (error) {
+      console.error("Failed to fetch Gemini brief suggestion:", error);
+    } finally {
+      setIsGeneratingBrief(false);
+    }
+  };
+
   // Calculate total assets dynamically for the button
-  const productCount = uploadedFiles.length > 0 ? uploadedFiles.length : 3; // defaults to 3 mock items if empty
+  const productCount = uploadedFiles.length > 0 ? uploadedFiles.length : 3;
   const formatCount = selectedFormat.includes("All") ? 3 : 1;
-  const totalCalculatedAssets = productCount * formatCount;
+  const totalCalculatedAssets = productCount * formatCount * 10;
 
   return (
     <div className="flex flex-col space-y-5">
+      {/* Header */}
       <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-        <h2 className="text-sm font-medium text-zinc-200 flex items-center gap-2">
-          <Layers className="h-4 w-4 text-indigo-400" />
-          Batch Campaign & Multi-Product Studio
+        <h2 className="text-sm font-medium text-zinc-100 flex items-center gap-2">
+          <Layers className="h-4 w-4 text-[#1428a0]" />
+          Cheil Studio // Samsung Ecosystem AI
         </h2>
-        <span className="text-xs bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded-md">
-          v3.0 Batch Engine
+        <span className="text-xs bg-[#1428a0]/10 text-blue-400 border border-[#1428a0]/30 px-2 py-0.5 rounded-md">
+          v3.0 Enterprise
         </span>
       </div>
 
@@ -75,22 +104,23 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
         className="hidden"
       />
 
+      {/* Dropzone */}
       <div 
         onClick={handleDropzoneClick}
-        className="border-2 border-dashed border-zinc-800 hover:border-indigo-500/50 transition-all rounded-xl p-4 text-center flex flex-col items-center justify-center bg-zinc-950/40 group cursor-pointer"
+        className="border-2 border-dashed border-zinc-800 hover:border-[#1428a0] transition-all rounded-xl p-4 text-center flex flex-col items-center justify-center bg-zinc-950/40 group cursor-pointer"
       >
         <div className="h-9 w-9 rounded-full bg-zinc-900 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform shadow-inner">
-          <Upload className="h-4 w-4 text-zinc-400 group-hover:text-indigo-400 transition-colors" />
+          <Upload className="h-4 w-4 text-zinc-400 group-hover:text-blue-400 transition-colors" />
         </div>
-        <p className="text-xs font-medium text-zinc-300">Drop multiple master product assets here</p>
-        <p className="text-[10px] text-zinc-500 mt-0.5">Upload up to 5+ PNG cutouts for batch generation</p>
+        <p className="text-xs font-medium text-zinc-300">Drop Samsung Master Assets here</p>
+        <p className="text-[10px] text-zinc-500 mt-0.5">Galaxy S26 Ultra, Watch Ultra cutouts & PNGs</p>
       </div>
 
       {uploadedFiles.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center justify-between text-[11px] text-zinc-400">
             <span>Master Assets Loaded:</span>
-            <span className="text-indigo-400 font-medium">{uploadedFiles.length} Products</span>
+            <span className="text-blue-400 font-medium">{uploadedFiles.length} Products</span>
           </div>
           <div className="grid grid-cols-3 gap-2 max-h-28 overflow-y-auto pr-1">
             {uploadedFiles.map((file, idx) => (
@@ -109,7 +139,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
             ))}
             <button 
               onClick={handleDropzoneClick}
-              className="border border-dashed border-zinc-800 hover:border-indigo-500/50 rounded-lg p-2 flex items-center justify-center text-zinc-500 hover:text-indigo-400 transition-colors bg-zinc-950/20"
+              className="border border-dashed border-zinc-800 hover:border-[#1428a0] rounded-lg p-2 flex items-center justify-center text-zinc-500 hover:text-blue-400 transition-colors bg-zinc-950/20"
             >
               <Plus className="h-4 w-4" />
             </button>
@@ -117,15 +147,16 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
         </div>
       )}
 
+      {/* Target Market */}
       <div className="space-y-1.5">
         <label className="text-xs font-medium text-zinc-400 flex items-center gap-1.5">
-          <Globe className="h-3.5 w-3.5 text-indigo-400" />
+          <Globe className="h-3.5 w-3.5 text-blue-400" />
           Target Market & Language (RAG Localization)
         </label>
         <select
           value={selectedLanguage}
           onChange={(e) => setSelectedLanguage(e.target.value)}
-          className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-xs text-zinc-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-xs text-zinc-200 focus:outline-none focus:ring-1 focus:ring-[#1428a0]"
         >
           <option>en-CA (Canadian English)</option>
           <option>fr-CA (French Canadian / OQLF)</option>
@@ -134,24 +165,49 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
         </select>
       </div>
 
+      {/* Campaign Brief with Embedded Gemini AI Magic Button */}
       <div className="space-y-1.5">
-        <label className="text-xs font-medium text-zinc-400">Campaign Brief Description</label>
-        <textarea
-          rows={2}
-          value={briefText}
-          onChange={(e) => setBriefText(e.target.value)}
-          className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-xs text-zinc-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all resize-none"
-          placeholder="Enter global campaign theme..."
-        />
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-medium text-zinc-400">Campaign Brief Description</label>
+          <span className="text-[10px] text-zinc-500">Gemini API Powered</span>
+        </div>
+        <div className="relative">
+          <textarea
+            rows={3}
+            value={briefText}
+            onChange={(e) => setBriefText(e.target.value)}
+            className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 pb-9 text-xs text-zinc-200 focus:outline-none focus:ring-2 focus:ring-[#1428a0]/50 transition-all resize-none"
+            placeholder="Global launch campaign for Galaxy S26 Ultra emphasizing Nightography & AI productivity..."
+          />
+          <div className="absolute bottom-2.5 right-2.5">
+            <motion.button
+              type="button"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleAISuggestion}
+              disabled={isGeneratingBrief}
+              className="bg-[#1428a0]/20 hover:bg-[#1428a0]/40 text-blue-300 border border-[#1428a0]/40 px-2.5 py-1 rounded-lg text-[11px] font-medium flex items-center gap-1.5 transition-all shadow-sm cursor-pointer disabled:opacity-50"
+              title="Generate intelligent brief using Gemini API"
+            >
+              {isGeneratingBrief ? (
+                <RefreshCw className="h-3 w-3 animate-spin text-blue-400" />
+              ) : (
+                <Sparkles className="h-3 w-3 text-blue-400" />
+              )}
+              <span>{isGeneratingBrief ? "Thinking..." : "Gemini Suggest"}</span>
+            </motion.button>
+          </div>
+        </div>
       </div>
 
+      {/* Format & Tone */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
           <label className="text-[11px] font-medium text-zinc-400">Target Format</label>
           <select
             value={selectedFormat}
             onChange={(e) => setSelectedFormat(e.target.value)}
-            className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-xs text-zinc-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-xs text-zinc-200 focus:outline-none focus:ring-1 focus:ring-[#1428a0]"
           >
             <option>All Formats (Matrix Batch)</option>
             <option>Instagram Story (9:16)</option>
@@ -164,40 +220,42 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
           <select
             value={selectedTone}
             onChange={(e) => setSelectedTone(e.target.value)}
-            className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-xs text-zinc-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-xs text-zinc-200 focus:outline-none focus:ring-1 focus:ring-[#1428a0]"
           >
-            <option>Modern & Premium</option>
-            <option>Vibrant & Playful</option>
-            <option>Sleek Corporate</option>
+            <option>Samsung Sleek & Minimalist</option>
+            <option>Dynamic Ecosystem</option>
+            <option>High-End Enterprise</option>
           </select>
         </div>
       </div>
 
+      {/* Guardrails Box */}
       <div className="bg-zinc-950/80 border border-zinc-800/80 rounded-xl p-3 space-y-1.5">
         <div className="flex items-center justify-between text-xs text-zinc-400">
           <span className="flex items-center gap-1.5 font-medium text-zinc-300">
             <ShieldCheck className="h-4 w-4 text-emerald-400" />
-            Pinecone Guardrails & Multi-SKU Check
+            Samsung Brand Guidelines & Pinecone Guardrails
           </span>
-          <span className="text-[10px] text-indigo-400">Active</span>
+          <span className="text-[10px] text-blue-400">Active</span>
         </div>
         <div className="text-[11px] text-zinc-500 bg-zinc-900/60 p-2 rounded border border-zinc-800/50 flex items-center gap-2">
           <FileText className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
-          <span className="truncate">Global_Brand_Matrix_2026.pdf</span>
+          <span className="truncate">Samsung_Global_Brand_Matrix_2026.pdf</span>
         </div>
       </div>
 
+      {/* Generate Action Button */}
       <motion.button
         whileHover={{ scale: 1.01 }}
         whileTap={{ scale: 0.98 }}
         onClick={onGenerate}
         disabled={isGenerating}
-        className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-medium py-3 rounded-xl shadow-lg shadow-indigo-600/20 text-xs flex items-center justify-center space-x-2 transition-all disabled:opacity-50 cursor-pointer"
+        className="w-full bg-[#1428a0] hover:bg-[#0057b8] text-white font-medium py-3 rounded-xl shadow-lg shadow-[#1428a0]/20 text-xs flex items-center justify-center space-x-2 transition-all disabled:opacity-50 cursor-pointer"
       >
         {isGenerating ? (
           <>
             <RefreshCw className="h-4 w-4 animate-spin" />
-            <span>Executing Batch Matrix Generation...</span>
+            <span>Executing Samsung Matrix Generation...</span>
           </>
         ) : (
           <>

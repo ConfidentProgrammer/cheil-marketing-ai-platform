@@ -24,14 +24,16 @@ export const MetadataModal: React.FC<MetadataModalProps> = ({
       >
         <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
           <div className="flex items-center gap-2">
-            <Code2 className="h-4 w-4 text-indigo-400" />
+            <div className="h-7 w-7 rounded-lg bg-[#1428a0]/20 border border-[#1428a0]/30 flex items-center justify-center">
+              <Code2 className="h-3.5 w-3.5 text-blue-400" />
+            </div>
             <h3 className="text-sm font-semibold text-zinc-200">
               AI Metadata & DAM Payload
             </h3>
           </div>
           <button
             onClick={onClose}
-            className="text-zinc-400 hover:text-white p-1 rounded-lg bg-zinc-900 cursor-pointer"
+            className="text-zinc-400 hover:text-white p-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 transition-colors cursor-pointer"
           >
             <X className="h-4 w-4" />
           </button>
@@ -60,7 +62,7 @@ export const MetadataModal: React.FC<MetadataModalProps> = ({
               {asset.metadata.tags.map((tag, i) => (
                 <span
                   key={i}
-                  className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-md text-[10px]"
+                  className="bg-[#1428a0]/10 border border-[#1428a0]/30 text-blue-300 px-2 py-0.5 rounded-md text-[10px]"
                 >
                   {tag}
                 </span>
@@ -72,7 +74,7 @@ export const MetadataModal: React.FC<MetadataModalProps> = ({
             <span className="text-zinc-400 font-medium">
               Generated JSON Payload (CMS Ready):
             </span>
-            <pre className="bg-black border border-zinc-800 p-3 rounded-xl text-[10px] text-indigo-300 font-mono overflow-x-auto mt-1">
+            <pre className="bg-black border border-zinc-800 p-3 rounded-xl text-[10px] text-blue-300 font-mono overflow-x-auto mt-1">
               {JSON.stringify(
                 {
                   sku: asset.metadata.sku,
@@ -94,7 +96,7 @@ export const MetadataModal: React.FC<MetadataModalProps> = ({
         <div className="pt-2 flex justify-end">
           <button
             onClick={onClose}
-            className="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-4 py-2 rounded-xl text-xs transition-all cursor-pointer"
+            className="bg-[#1428a0] hover:bg-[#0057b8] text-white font-medium px-4 py-2 rounded-xl text-xs transition-all cursor-pointer shadow-lg shadow-[#1428a0]/20"
           >
             Close Inspector
           </button>

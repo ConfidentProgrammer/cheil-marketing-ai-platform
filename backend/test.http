@@ -1,0 +1,32 @@
+### Variables
+@baseUrl = http://localhost:8000
+
+### 1. Test Gemini AI Brief Generation (Canadian English, Social Feed)
+POST {{baseUrl}}/api/generate-brief
+Content-Type: application/json
+
+{
+  "language": "en-CA (Canadian English)",
+  "format": "Facebook Feed (1:1)",
+  "tone": "Samsung Sleek & Minimalist"
+}
+
+### 2. Test Gemini AI Brief Generation (French Canadian, Story)
+POST {{baseUrl}}/api/generate-brief
+Content-Type: application/json
+
+{
+  "language": "fr-CA (French Canadian / OQLF)",
+  "format": "Instagram Story (9:16)",
+  "tone": "Dynamic Ecosystem"
+}
+
+### 3. Test Gemini AI Brief Generation (US Enterprise)
+POST {{baseUrl}}/api/generate-brief
+Content-Type: application/json
+
+{
+  "language": "en-US (United States)",
+  "format": "Web Leaderboard (16:9)",
+  "tone": "High-End Enterprise"
+}
