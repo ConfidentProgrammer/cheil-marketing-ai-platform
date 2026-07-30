@@ -50,10 +50,15 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
     setUploadedFiles((prev) => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
-  // API Call to FastAPI backend which triggers Gemini
+  // API Call to FastAPI backend which triggers Gemini, incorporating product_name context
   const handleAISuggestion = async () => {
     setIsGeneratingBrief(true);
     try {
+      // Map through all uploaded files, clean their extensions/underscores, and join them
+      const productNames = uploadedFiles.length > 0
+        ? uploadedFiles.map(file => file.name.replace(/\.[^/.]+$/, "").replace(/[_]/g, " ")).join(", ")
+        : "Samsung Galaxy Device";
+
       const response = await fetch("https://literate-fishstick-77pp49g4v45hx4w-8000.app.github.dev/api/generate-brief", {
         method: "POST",
         headers: {
@@ -63,6 +68,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
           language: selectedLanguage,
           format: selectedFormat,
           tone: selectedTone,
+          product_name: productNames, // Now sends all filenames as a combined string
         }),
       });
 

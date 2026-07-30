@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 
 export const HtmlBannerStudio: React.FC = () => {
   const [briefText, setBriefText] = useState<string>(
-    "Summer Launch - Galaxy Z Flip6 Campaign: Clean, minimalist beach lifestyle shoot with high-contrast neon accents and bold typography."
+    "Upload Product Image and click gemini suggestion for AI"
   );
   const [selectedTone, setSelectedTone] = useState<string>("Modern & Premium");
   const [selectedLanguage, setSelectedLanguage] = useState<string>("en-CA (Canadian English)");
@@ -51,6 +51,8 @@ export const HtmlBannerStudio: React.FC = () => {
     }
   };
 
+
+
   const handleAISuggestion = async () => {
     setIsSuggestingBrief(true);
     try {
@@ -63,6 +65,7 @@ export const HtmlBannerStudio: React.FC = () => {
           language: selectedLanguage,
           format: selectedFormats,
           tone: selectedTone,
+          product_name: uploadedImageFile?.name
         }),
       });
 
@@ -329,13 +332,19 @@ export const HtmlBannerStudio: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex-1 p-4 flex items-center justify-center bg-zinc-950 overflow-auto relative">
+<div className="flex-1 p-4 flex items-center justify-center bg-zinc-950 overflow-auto relative">
             {activeTab === "preview" ? (
-              <div className="w-full h-full flex items-center justify-center border border-zinc-800/80 rounded-xl bg-zinc-900/30 overflow-auto shadow-inner p-4">
+              <div className="w-full h-full flex items-center justify-center border border-zinc-800/80 rounded-xl bg-zinc-900/30 overflow-auto shadow-inner p-6">
                 <iframe
                   srcDoc={generatedBanners[activePreviewIndex]?.html || ""}
                   title="Banner Preview"
-                  className="w-full h-full border-0 rounded-lg shadow-2xl min-h-[350px]"
+                  style={{
+                    // Dynamically set explicit width & height based on format so it forces horizontal scrolling if wider than the screen
+                    minWidth: currentBanner?.format.includes("1200x630") ? "728px" : "100%",
+                    minHeight: currentBanner?.format.includes("1200x630") ? "630px" : "300px",
+                    border: "0",
+                  }}
+                  className="rounded-lg shadow-2xl bg-white flex-shrink-0"
                   sandbox="allow-scripts allow-same-origin"
                 />
               </div>

@@ -131,7 +131,6 @@ async def audit_generated_asset_with_gemini(image_path: str, brand_rules: str, c
             raw_text = raw_text[3:]
         if raw_text.endswith("```"):
             raw_text = raw_text[:-3]
-        print(f"Audit results: {json.loads(raw_text.strip())}")
         return json.loads(raw_text.strip())
     except Exception as e:
         print(f"Gemini Vision audit fallback triggered due to: {str(e)}")
@@ -142,27 +141,33 @@ async def audit_generated_asset_with_gemini(image_path: str, brand_rules: str, c
         }
 
 
+from typing import Union, List, Optional
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from pydantic import BaseModel
+
 class BriefRequest(BaseModel):
     language: str
-    format: Union[str, List[str]]  # Or simply: format: str | List[str]
+    format: Union[str, List[str]]
     tone: str
+    product_name: Optional[str] = "Samsung Galaxy Flagship"  # Added product name context
 
 @app.post("/api/generate-brief")
 async def generate_brief(req: BriefRequest):
+    print(req)
     try:
-        # Craft a prompt for Gemini to generate a context-aware campaign brief
+        # Craft a prompt that strictly locks Gemini to the specified product
         prompt = (
             f"Write a single-paragraph enterprise marketing brief for Samsung. "
+            f"CRITICAL: The product/asset being featured is: {req.product_name}. Do not write about any other device. "
             f"Target Market / Language: {req.language}. "
             f"Format: {req.format}. "
             f"Tone: {req.tone}. "
-            f"CRITICAL CONSTRAINT: Maximum 1 to 2 lines total. "
-            f"No markdown headers, no bullet points, no sections. "
+            f"CRITICAL CONSTRAINT: Maximum 1 line total. "
+            f"No markdown headers, no bullet points, no sections."
         )
 
-        # Call Gemini model
         response = genai_client.models.generate_content(
-            model='gemini-3.5-flash-lite',
+            model='gemini-3.5-flash-lite', # Updated to a valid model version if applicable
             contents=prompt,
             config=types.GenerateContentConfig(
                 temperature=0.3,
@@ -177,6 +182,7 @@ async def generate_brief(req: BriefRequest):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/outputs/{filename}")
 async def get_output_image(filename: str):
@@ -435,7 +441,7 @@ async def generate_html_suite(
             elif "300x600" in fmt:
                 width, height = 300, 600
             elif "1200x630" in fmt or "Product Asset Showcase" in fmt:
-                width, height = 1200, 630
+                width, height = 728, 530
     # Run Asset Showcase specialized prompt logic
             else:
                 width, height = 300, 250
@@ -451,16 +457,16 @@ async def generate_html_suite(
                 Headline/Product Title: "{headline}"
                 Tone: {selected_tone}
                 Language: {selected_language}
-                Product Transparent Asset URL: "{image_url}"
+                Product Transparent Asset URL: "https://literate-fishstick-77pp49g4v45hx4w-8000.app.github.dev{image_url}"
                 Primary Brand Accent Hex: "{accent_hex}"
                 
                 ASSET SHOWCASE DESIGN RULES:
                 - follow brand rules {brand_rules}
                 - This is NOT a standard ad banner. It is a stunning, studio-grade hero product showcase meant for marketing screenshots and decks.
-                - Center the product asset (`{image_url}`) with massive visual prominence, surrounded by rich ambient backlighting, glowing radial gradients using `{accent_hex}`, and subtle futuristic tech grid lines.
+                - Center the product asset https://literate-fishstick-77pp49g4v45hx4w-8000.app.github.dev{image_url} with massive visual prominence, surrounded by rich ambient backlighting, glowing radial gradients using `{accent_hex}`, and subtle futuristic tech grid lines.
                 - Include clean specification or feature pill tags floating near the asset.
                 - Return ONLY valid raw HTML code starting with <!DOCTYPE html>. Do not wrap in markdown.
-                - LAYOUT SCALING: Design the root container with `width: 100%; height: 100%;` (or `vw/vh`) so that it scales dynamically to fill whatever screen or preview container it is dropped into, maintaining an ideal 1200:630 aspect ratio.
+                - LAYOUT SCALING: Design the root container with `width: 100%; height: 100%;` (or `vw/vh`) so that it scales dynamically to fill whatever screen or preview container it is dropped into, maintaining an ideal 728:530 aspect ratio.
                 """
             else:
                 # Standard Banner Prompt
@@ -490,7 +496,7 @@ async def generate_html_suite(
                     contents=prompt,
                     config=types.GenerateContentConfig(
                         temperature=0.3,
-                        max_output_tokens=3000,
+                        max_output_tokens=4000,
                     ),
                 )
                 html_output = response.text.strip() if response.text else ""
