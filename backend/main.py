@@ -423,72 +423,105 @@ async def generate_html_suite(
 
         format_list = [f.strip() for f in formats.split(",") if f.strip()]
         results = []
-
+        print(format_list)
         for fmt in format_list:
-            # Extract dimensions from format string (e.g., "Web Leaderboard (728x90)")
-            dim_part = fmt.split("(")[-1].replace(")", "")
-            width, height = dim_part.split("x") if "x" in dim_part else ("300", "250")
+            # Determine dimensions based on format string
+            if "728x90" in fmt:
+                width, height = 728, 90
+            elif "300x250" in fmt:
+                width, height = 300, 250
+            elif "300x600" in fmt:
+                width, height = 300, 600
+            elif "1200x630" in fmt or "Product Asset Showcase" in fmt:
+                width, height = 1200, 630
+    # Run Asset Showcase specialized prompt logic
+            else:
+                width, height = 300, 250
 
-            # 3. Prompt Gemini to generate clean HTML/CSS code grounded in RAG rules
-            prompt = f"""
-            You are an elite Samsung frontend developer specializing in responsive digital ad banners.
-            Create a single self-contained, responsive HTML file with embedded CSS for a display ad banner.
-            Dimensions: Width {width}px, Height {height}px.
-            Headline: "{headline}"
-            Tone: {selected_tone}
-            Language: {selected_language}
-            Primary Brand Accent Hex: "{accent_hex}"
-            Brand Guardrails & Rules: {brand_rules}
-            
-            DESIGN INSTRUCTIONS:
-            - Do NOT include any <img> tags or external image references to prevent broken image errors.
-            - Build a pure typographic and abstract CSS layout using "{accent_hex}" as the core dynamic accent color (e.g., for glowing borders, call-to-action buttons, or ambient background gradients) paired with sleek dark tech backgrounds (#0b0b0b).
-            
-            Return ONLY valid raw HTML code starting with <!DOCTYPE html>. Do not wrap it in markdown code blocks or backticks.
-            """
-
-            try:
-                response = genai_client.models.generate_content(
-                    model="gemini-3.5-flash-lite",
-                    contents=prompt,
-                    config=types.GenerateContentConfig(
-                        temperature=0.3,
-                        max_output_tokens=3000,
-                    ),
-                )
-                html_output = response.text.strip() if response.text else ""
+        # BRANCH PROMPT BASED ON FORMAT TYPE
+            print(width, height)
+            if "Product Asset Showcase" in fmt:
+                prompt = f"""
+                You are an elite Senior 3D/UI Presentation Designer at Samsung.
+                Create a single self-contained, responsive HTML file for a High-Resolution Product Asset Showcase and Marketing Deck Slide.
+                Dimensions: Width {width}px, Height {height}px.
+                Headline/Product Title: "{headline}"
+                Tone: {selected_tone}
+                Language: {selected_language}
+                Product Transparent Asset URL: "{image_url}"
+                Primary Brand Accent Hex: "{accent_hex}"
                 
-                # Strip accidental markdown wrappers if present
-                if html_output.startswith("```html"):
-                    html_output = html_output[7:]
-                if html_output.startswith("```"):
-                    html_output = html_output[3:]
-                if html_output.endswith("```"):
-                    html_output = html_output[:-3]
-                    
-            except Exception as gemini_err:
-                print(f"Gemini HTML generation fallback triggered: {str(gemini_err)}")
-                html_output = f"""<!DOCTYPE html>
-                <html>
-                <head>
-                <style>
-                  body {{ margin: 0; background: #09090b; color: #fff; font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; padding: 12px; height: 100vh; box-sizing: border-box; text-align: center; border: 1px solid #27272a; }}
-                  h3 {{ font-size: 13px; margin: 0 0 4px 0; }}
-                  p {{ font-size: 10px; color: #a1a1aa; margin: 0; }}
-                </style>
-                </head>
-                <body>
-                  <div>
-                    <h3>{headline}</h3>
-                    <p>{selected_tone} | {selected_language}</p>
-                  </div>
-                </body>
-                </html>"""
+                ASSET SHOWCASE DESIGN RULES:
+                - follow brand rules {brand_rules}
+                - This is NOT a standard ad banner. It is a stunning, studio-grade hero product showcase meant for marketing screenshots and decks.
+                - Center the product asset (`{image_url}`) with massive visual prominence, surrounded by rich ambient backlighting, glowing radial gradients using `{accent_hex}`, and subtle futuristic tech grid lines.
+                - Include clean specification or feature pill tags floating near the asset.
+                - Return ONLY valid raw HTML code starting with <!DOCTYPE html>. Do not wrap in markdown.
+                - LAYOUT SCALING: Design the root container with `width: 100%; height: 100%;` (or `vw/vh`) so that it scales dynamically to fill whatever screen or preview container it is dropped into, maintaining an ideal 1200:630 aspect ratio.
+                """
+            else:
+                # Standard Banner Prompt
+                prompt = f"""
+                You are an elite Samsung frontend developer specializing in responsive digital ad banners.
+                Create a single self-contained, responsive HTML file for a display ad banner.
+                Dimensions: Width {width}px, Height {height}px.
+                Headline: "{headline}"
+                Tone: {selected_tone}
+                Language: {selected_language}
+                Product Asset URL: "{image_url}"
+                Primary Brand Accent Hex: "{accent_hex}"
+                
+                STANDARD BANNER DESIGN RULES:
+                - follow brand rules {brand_rules}
+                - Clean layout optimized for programmatic display networks.
+                - Integrate the product image cleanly with drop shadows and accent colors.
+                - Return ONLY valid raw HTML code starting with <!DOCTYPE html>. Do not wrap in markdown.
+                """
+        
+        # Send specialized prompt to Gemini...
 
-            results.append({
-                "format": fmt,
-                "html": html_output.strip()
-            })
+                try:
+                    response = genai_client.models.generate_content(
+                        model="gemini-3.5-flash-lite",
+                        contents=prompt,
+                        config=types.GenerateContentConfig(
+                            temperature=0.3,
+                            max_output_tokens=3000,
+                        ),
+                    )
+                    html_output = response.text.strip() if response.text else ""
+                    
+                    # Strip accidental markdown wrappers if present
+                    if html_output.startswith("```html"):
+                        html_output = html_output[7:]
+                    if html_output.startswith("```"):
+                        html_output = html_output[3:]
+                    if html_output.endswith("```"):
+                        html_output = html_output[:-3]
+                        
+                except Exception as gemini_err:
+                    print(f"Gemini HTML generation fallback triggered: {str(gemini_err)}")
+                    html_output = f"""<!DOCTYPE html>
+                    <html>
+                    <head>
+                    <style>
+                    body {{ margin: 0; background: #09090b; color: #fff; font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; padding: 12px; height: 100vh; box-sizing: border-box; text-align: center; border: 1px solid #27272a; }}
+                    h3 {{ font-size: 13px; margin: 0 0 4px 0; }}
+                    p {{ font-size: 10px; color: #a1a1aa; margin: 0; }}
+                    </style>
+                    </head>
+                    <body>
+                    <div>
+                        <h3>{headline}</h3>
+                        <p>{selected_tone} | {selected_language}</p>
+                    </div>
+                    </body>
+                    </html>"""
+
+                results.append({
+                    "format": fmt,
+                    "html": html_output.strip()
+                })
 
         return {
             "success": True,

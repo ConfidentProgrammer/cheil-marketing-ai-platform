@@ -115,6 +115,9 @@ export const HtmlBannerStudio: React.FC = () => {
     }
   };
 
+  const currentBanner = generatedBanners[activePreviewIndex] || generatedBanners[0];
+  const isLargeFormat = currentBanner?.format.includes("1200x630");
+
   return (
     <div className="flex flex-col h-[780px] bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-6 backdrop-blur-xl shadow-2xl">
       {/* Header */}
@@ -222,7 +225,8 @@ export const HtmlBannerStudio: React.FC = () => {
               {[
                 "Web Leaderboard (728x90)",
                 "Medium Rectangle (300x250)",
-                "Half Page Display (300x600)"
+                "Half Page Display (300x600)",
+                "Product Asset Showcase (1200x630)"
               ].map((format) => {
                 const isSelected = selectedFormats.includes(format);
                 return (
@@ -261,24 +265,33 @@ export const HtmlBannerStudio: React.FC = () => {
         {/* Preview / Code Column (7 cols) */}
         <div className="lg:col-span-7 flex flex-col bg-zinc-950/60 rounded-xl border border-zinc-800/80 overflow-hidden">
           {/* Format Sub-tabs */}
-          <div className="flex items-center justify-between px-4 py-2.5 border-b border-zinc-800/80 bg-zinc-900/40 overflow-x-auto">
-            <div className="flex items-center gap-1.5">
-              {generatedBanners.map((banner, idx) => (
-                <button
-                  key={banner.format}
-                  onClick={() => setActivePreviewIndex(idx)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
-                    activePreviewIndex === idx
-                      ? "bg-blue-600 text-white shadow-md"
-                      : "bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-800"
-                  }`}
-                >
-                  {banner.format.split(" ")[0]} ({banner.format.match(/\(([^)]+)\)/)?.[1]})
-                </button>
-              ))}
+          <div className="flex items-center justify-between px-4 py-2.5 border-b border-zinc-800/80 bg-zinc-900/40 gap-3">
+            {/* Scrollable container for tabs so they never get clipped */}
+            <div className="flex items-center gap-1.5 overflow-x-auto py-1 scrollbar-none min-w-0">
+              {generatedBanners.map((banner, idx) => {
+                // Safely parse name and resolution without breaking or showing "W"
+                const parts = banner.format.split("(");
+                const titleName = parts[0]?.trim() || banner.format;
+                const resolution = parts[1] ? `(${parts[1]}` : "";
+                console.log(generatedBanners)
+                return (
+                  <button
+                    key={banner.format}
+                    onClick={() => setActivePreviewIndex(idx)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                      activePreviewIndex === idx
+                        ? "bg-blue-600 text-white shadow-md"
+                        : "bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-800"
+                    }`}
+                  >
+                    <span>{titleName}</span>
+                    {resolution && <span className="opacity-75 text-[10px]">{resolution}</span>}
+                  </button>
+                );
+              })}
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-shrink-0">
               <div className="flex bg-zinc-950 p-1 rounded-lg border border-zinc-800">
                 <button
                   onClick={() => setActiveTab("preview")}
@@ -300,12 +313,13 @@ export const HtmlBannerStudio: React.FC = () => {
 
               <button
                 onClick={() => {
-                  const currentHtml = generatedBanners[activePreviewIndex]?.html || "";
+                  const currentHtml = currentBanner?.html || "";
                   const blob = new Blob([currentHtml], { type: "text/html" });
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement("a");
                   a.href = url;
-                  a.download = `GalaxyZFlip6_${generatedBanners[activePreviewIndex]?.format.split(" ")[0]}.html`;
+                  const safeName = currentBanner?.format ? currentBanner.format.split("(")[0].trim().replace(/\s+/g, '') : "Banner";
+                  a.download = `GalaxyZFlip6_${safeName}.html`;
                   a.click();
                 }}
                 className="flex items-center gap-1 text-[11px] bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-3 py-1.5 rounded-lg transition-all cursor-pointer"
@@ -315,9 +329,9 @@ export const HtmlBannerStudio: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex-1 p-6 flex items-center justify-center bg-zinc-950 overflow-hidden relative">
+          <div className="flex-1 p-4 flex items-center justify-center bg-zinc-950 overflow-auto relative">
             {activeTab === "preview" ? (
-              <div className="w-full h-full flex items-center justify-center border border-zinc-800/80 rounded-xl bg-zinc-900/30 overflow-hidden shadow-inner p-4">
+              <div className="w-full h-full flex items-center justify-center border border-zinc-800/80 rounded-xl bg-zinc-900/30 overflow-auto shadow-inner p-4">
                 <iframe
                   srcDoc={generatedBanners[activePreviewIndex]?.html || ""}
                   title="Banner Preview"
@@ -327,7 +341,7 @@ export const HtmlBannerStudio: React.FC = () => {
               </div>
             ) : (
               <div className="w-full h-full overflow-y-auto bg-zinc-950 font-mono text-xs text-zinc-300 p-4 rounded-xl border border-zinc-900">
-                <pre className="whitespace-pre-wrap">{generatedBanners[activePreviewIndex]?.html || ""}</pre>
+                <pre className="whitespace-pre-wrap">{currentBanner?.html || ""}</pre>
               </div>
             )}
           </div>
