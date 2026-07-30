@@ -35,6 +35,8 @@ os.makedirs(UPLOADS_DIR, exist_ok=True)
 
 # Mount outputs directory so frontend can display generated assets directly via URL
 app.mount("/outputs", StaticFiles(directory=OUTPUTS_DIR), name="outputs")
+app.mount("/uploads", StaticFiles(directory=UPLOADS_DIR), name="uploads")
+
 
 # Initialize Gemini & Pinecone for compliance text evaluation
 genai_client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
@@ -156,7 +158,6 @@ async def generate_brief(req: BriefRequest):
             f"Tone: {req.tone}. "
             f"CRITICAL CONSTRAINT: Maximum 1 to 2 lines total. "
             f"No markdown headers, no bullet points, no sections. "
-            f"Just a concise 1-2 sentence sentence string focusing on Nightography and AI productivity."
         )
 
         # Call Gemini model
@@ -164,7 +165,7 @@ async def generate_brief(req: BriefRequest):
             model='gemini-3.5-flash-lite',
             contents=prompt,
             config=types.GenerateContentConfig(
-                temperature=0.7,
+                temperature=0.3,
                 max_output_tokens=150,
             ),
         )
@@ -414,8 +415,9 @@ async def generate_html_suite(
             with open(file_path, "wb") as buffer:
                 content = await image_file.read()
                 buffer.write(content)
+                
             # Map to your static uploads route or relative serving path
-            image_url = f"/outputs/{image_file.filename}" # Or copy logic to expose uploads if needed
+            image_url = f"/uploads/{image_file.filename}" # Or copy logic to expose uploads if needed
 
         # 2. Retrieve brand compliance rules using your existing RAG pipeline
         rag_query = f"Campaign headline: {headline}, Tone: {selected_tone}, Language: {selected_language}"
@@ -441,6 +443,7 @@ async def generate_html_suite(
         # BRANCH PROMPT BASED ON FORMAT TYPE
             print(width, height)
             if "Product Asset Showcase" in fmt:
+                print('inside product asset showcase')
                 prompt = f"""
                 You are an elite Senior 3D/UI Presentation Designer at Samsung.
                 Create a single self-contained, responsive HTML file for a High-Resolution Product Asset Showcase and Marketing Deck Slide.
@@ -461,6 +464,7 @@ async def generate_html_suite(
                 """
             else:
                 # Standard Banner Prompt
+                print('inside standard')
                 prompt = f"""
                 You are an elite Samsung frontend developer specializing in responsive digital ad banners.
                 Create a single self-contained, responsive HTML file for a display ad banner.
@@ -468,7 +472,7 @@ async def generate_html_suite(
                 Headline: "{headline}"
                 Tone: {selected_tone}
                 Language: {selected_language}
-                Product Asset URL: "{image_url}"
+                Product Asset URL: "https://literate-fishstick-77pp49g4v45hx4w-8000.app.github.dev{image_url}"
                 Primary Brand Accent Hex: "{accent_hex}"
                 
                 STANDARD BANNER DESIGN RULES:
@@ -479,50 +483,50 @@ async def generate_html_suite(
                 """
         
         # Send specialized prompt to Gemini...
-
-                try:
-                    response = genai_client.models.generate_content(
-                        model="gemini-3.5-flash-lite",
-                        contents=prompt,
-                        config=types.GenerateContentConfig(
-                            temperature=0.3,
-                            max_output_tokens=3000,
-                        ),
-                    )
-                    html_output = response.text.strip() if response.text else ""
+            print('now starting the gemini generate content')
+            try:
+                response = genai_client.models.generate_content(
+                    model="gemini-3.5-flash-lite",
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        temperature=0.3,
+                        max_output_tokens=3000,
+                    ),
+                )
+                html_output = response.text.strip() if response.text else ""
+                # Strip accidental markdown wrappers if present
+                if html_output.startswith("```html"):
+                    html_output = html_output[7:]
+                if html_output.startswith("```"):
+                    html_output = html_output[3:]
+                if html_output.endswith("```"):
+                    html_output = html_output[:-3]
                     
-                    # Strip accidental markdown wrappers if present
-                    if html_output.startswith("```html"):
-                        html_output = html_output[7:]
-                    if html_output.startswith("```"):
-                        html_output = html_output[3:]
-                    if html_output.endswith("```"):
-                        html_output = html_output[:-3]
-                        
-                except Exception as gemini_err:
-                    print(f"Gemini HTML generation fallback triggered: {str(gemini_err)}")
-                    html_output = f"""<!DOCTYPE html>
-                    <html>
-                    <head>
-                    <style>
-                    body {{ margin: 0; background: #09090b; color: #fff; font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; padding: 12px; height: 100vh; box-sizing: border-box; text-align: center; border: 1px solid #27272a; }}
-                    h3 {{ font-size: 13px; margin: 0 0 4px 0; }}
-                    p {{ font-size: 10px; color: #a1a1aa; margin: 0; }}
-                    </style>
-                    </head>
-                    <body>
-                    <div>
-                        <h3>{headline}</h3>
-                        <p>{selected_tone} | {selected_language}</p>
-                    </div>
-                    </body>
-                    </html>"""
+            except Exception as gemini_err:
+                print(f"Gemini HTML generation fallback triggered: {str(gemini_err)}")
+                html_output = f"""<!DOCTYPE html>
+                <html>
+                <head>
+                <style>
+                body {{ margin: 0; background: #09090b; color: #fff; font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; padding: 12px; height: 100vh; box-sizing: border-box; text-align: center; border: 1px solid #27272a; }}
+                h3 {{ font-size: 13px; margin: 0 0 4px 0; }}
+                p {{ font-size: 10px; color: #a1a1aa; margin: 0; }}
+                </style>
+                </head>
+                <body>
+                <div>
+                    <h3>{headline}</h3>
+                    <p>{selected_tone} | {selected_language}</p>
+                </div>
+                </body>
+                </html>"""
 
-                results.append({
-                    "format": fmt,
-                    "html": html_output.strip()
-                })
+            results.append({
+                "format": fmt,
+                "html": html_output.strip()
+            })
 
+        print("Length of the results",len(results))
         return {
             "success": True,
             "rag_rules_matched": brand_rules,

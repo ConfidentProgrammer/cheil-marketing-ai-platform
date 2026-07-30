@@ -100,7 +100,7 @@ export const HtmlBannerStudio: React.FC = () => {
       }
 
       const data = await response.json();
-      
+      console.log(data)
       if (data.success && data.results && data.results.length > 0) {
         setGeneratedBanners(data.results);
         setActivePreviewIndex(0);
@@ -336,7 +336,7 @@ export const HtmlBannerStudio: React.FC = () => {
                   srcDoc={generatedBanners[activePreviewIndex]?.html || ""}
                   title="Banner Preview"
                   className="w-full h-full border-0 rounded-lg shadow-2xl min-h-[350px]"
-                  sandbox="allow-scripts"
+                  sandbox="allow-scripts allow-same-origin"
                 />
               </div>
             ) : (
